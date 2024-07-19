@@ -16,12 +16,12 @@ if ! [ -x "$(command -v docker)" ]; then
   exit 1
 fi
 
-if [ "$(docker ps -q -f name=$DB_CONTAINER_NAME)" ]; then
+if [ "$(sudo docker ps -q -f name=$DB_CONTAINER_NAME)" ]; then
   echo "Database container '$DB_CONTAINER_NAME' already running"
   exit 0
 fi
 
-if [ "$(docker ps -q -a -f name=$DB_CONTAINER_NAME)" ]; then
+if [ "$(sudo docker ps -q -a -f name=$DB_CONTAINER_NAME)" ]; then
   docker start "$DB_CONTAINER_NAME"
   echo "Existing database container '$DB_CONTAINER_NAME' started"
   exit 0
@@ -46,7 +46,7 @@ if [ "$DB_PASSWORD" == "password" ]; then
   sed -i -e "s#:password@#:$DB_PASSWORD@#" .env
 fi
 
-docker run -d \
+sudo docker run -d \
   --name $DB_CONTAINER_NAME \
   -e MYSQL_ROOT_PASSWORD="$DB_PASSWORD" \
   -e MYSQL_DATABASE=tgc_driz_test \
