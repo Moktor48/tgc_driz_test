@@ -1,123 +1,842 @@
-import { relations, sql } from "drizzle-orm";
 import {
+  mysqlTable,
+  mysqlSchema,
+  AnyMySqlColumn,
+  foreignKey,
   bigint,
-  index,
-  int,
-  mysqlTableCreator,
-  primaryKey,
-  text,
-  timestamp,
+  unique,
   varchar,
+  text,
+  int,
+  timestamp,
+  longtext,
+  datetime,
+  mediumtext,
+  tinyint,
+  index,
+  tinytext,
+  decimal,
+  float,
+  primaryKey,
 } from "drizzle-orm/mysql-core";
-import { type AdapterAccount } from "next-auth/adapters";
+import { sql } from "drizzle-orm";
 
-/**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
-export const createTable = mysqlTableCreator((name) => `tgc_driz_test_${name}`);
-
-export const posts = createTable(
-  "post",
+export const Account = mysqlTable(
+  "Account",
   {
-    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
-    name: varchar("name", { length: 256 }),
-    createdById: varchar("created_by", { length: 255 })
+    id: varchar("id", { length: 191 })
       .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at").onUpdateNow(),
-  },
-  (example) => ({
-    createdByIdIdx: index("created_by_idx").on(example.createdById),
-    nameIndex: index("name_idx").on(example.name),
-  })
-);
-
-export const users = createTable("user", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: varchar("name", { length: 255 }),
-  email: varchar("email", { length: 255 }).notNull(),
-  emailVerified: timestamp("email_verified", {
-    mode: "date",
-    fsp: 3,
-  }).default(sql`CURRENT_TIMESTAMP(3)`),
-  image: varchar("image", { length: 255 }),
-});
-
-export const usersRelations = relations(users, ({ many }) => ({
-  accounts: many(accounts),
-  sessions: many(sessions),
-}));
-
-export const accounts = createTable(
-  "account",
-  {
-    userId: varchar("user_id", { length: 255 })
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("userId", { length: 191 })
       .notNull()
-      .references(() => users.id),
-    type: varchar("type", { length: 255 })
-      .$type<AdapterAccount["type"]>()
-      .notNull(),
-    provider: varchar("provider", { length: 255 }).notNull(),
-    providerAccountId: varchar("provider_account_id", {
-      length: 255,
-    }).notNull(),
+      .references(() => User.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    type: varchar("type", { length: 191 }).notNull(),
+    provider: varchar("provider", { length: 191 }).notNull(),
+    providerAccountId: varchar("providerAccountId", { length: 191 }).notNull(),
     refresh_token: text("refresh_token"),
     access_token: text("access_token"),
     expires_at: int("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
-    scope: varchar("scope", { length: 255 }),
+    token_type: varchar("token_type", { length: 191 }),
+    scope: varchar("scope", { length: 191 }),
     id_token: text("id_token"),
-    session_state: varchar("session_state", { length: 255 }),
+    session_state: varchar("session_state", { length: 191 }),
   },
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-    userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
+  (table) => {
+    return {
+      Account_userId_key: unique("Account_userId_key").on(table.userId),
+      Account_provider_providerAccountId_key: unique(
+        "Account_provider_providerAccountId_key",
+      ).on(table.provider, table.providerAccountId),
+    };
+  },
 );
 
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
-}));
+export const article = mysqlTable("article", {
+  article_id: bigint("id", { mode: "number" })
+    .autoincrement()
+    .notNull()
+    .primaryKey(),
+  title: varchar("title", { length: 255 }),
+  undertitle: varchar("undertitle", { length: 255 }).notNull(),
+  content: text("content"),
+  cover_image_path: varchar("cover_image_path", { length: 255 }),
+  gmember_id: varchar("gmember_id", { length: 191 }),
+  game_type: varchar("game_type", { length: 50 }),
+  summary: text("summary"),
+  created_at: timestamp("created_at", { mode: "date" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
 
-export const sessions = createTable(
-  "session",
+export const articles = mysqlTable("articles", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  content_id: int("content_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content"),
+  timestamp: timestamp("timestamp", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  cover_image_path: varchar("cover_image_path", { length: 255 }),
+  game_type: varchar("game_type", { length: 255 }),
+  summary: text("summary"),
+});
+
+export const audiences = mysqlTable("audiences", {
+  audience_id: int("audience_id").autoincrement().notNull().primaryKey(),
+  audience_name: varchar("audience_name", { length: 255 }).notNull(),
+});
+
+export const bug = mysqlTable("bug", {
+  id: varchar("id", { length: 191 }).notNull().primaryKey(),
+  title: varchar("title", { length: 191 }).notNull(),
+  content: longtext("content").notNull(),
+  timestamp: datetime("timestamp", { mode: "string", fsp: 3 })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  createdById: varchar("createdById", { length: 191 })
+    .notNull()
+    .references(() => User.id, { onDelete: "restrict", onUpdate: "cascade" }),
+});
+
+export const build = mysqlTable("build", {
+  build_id: int("build_id").autoincrement().notNull().primaryKey(),
+  title: varchar("title", { length: 255 }),
+  content: text("content"),
+  cover_image_path: varchar("cover_image_path", { length: 255 }),
+  gmember_id: varchar("gmember_id", { length: 191 }),
+  game_type: varchar("game_type", { length: 50 }),
+  summary: text("summary"),
+  created_at: timestamp("created_at", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const builds = mysqlTable("builds", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  content_id: int("content_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: mediumtext("content"),
+  timestamp: timestamp("timestamp", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  cover_image_path: varchar("cover_image_path", { length: 255 }),
+  game_type: varchar("game_type", { length: 255 }),
+  summary: text("summary"),
+});
+
+export const build_audience_mapping = mysqlTable("build_audience_mapping", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  build_id: int("build_id"),
+  audience_id: int("audience_id"),
+});
+
+export const characters = mysqlTable("characters", {
+  character_uid: int("character_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  char_name: varchar("char_name", { length: 255 }).notNull(),
+  class_name: varchar("class_name", { length: 255 }),
+  fact_id: int("fact_id"),
+  game_id: int("game_id").notNull(),
+  misc_info: text("misc_info"),
+  trial_parse: int("trial_parse"),
+});
+
+export const contents = mysqlTable("contents", {
+  content_id: int("content_id").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }),
+  timestamp: timestamp("timestamp", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  type_id: int("type_id"),
+});
+
+export const content_access = mysqlTable("content_access", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  content_id: int("content_id"),
+  rank_role: varchar("rank_role", { length: 255 }),
+});
+
+export const content_types = mysqlTable("content_types", {
+  type_id: int("type_id").autoincrement().notNull().primaryKey(),
+  type_name: varchar("type_name", { length: 255 }).notNull(),
+});
+
+export const discord_aliases = mysqlTable("discord_aliases", {
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  alias_uid: int("alias_uid").autoincrement().notNull().primaryKey(),
+  alias_nickname: varchar("alias_nickname", { length: 255 }),
+  alias_disc_name: varchar("alias_disc_name", { length: 255 }),
+});
+
+export const discord_join_leave = mysqlTable("discord_join_leave", {
+  action_uid: int("action_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  action: int("action").notNull(),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+});
+
+export const discord_message = mysqlTable("discord_message", {
+  message_uid: bigint("message_uid", { mode: "number" })
+    .autoincrement()
+    .notNull()
+    .primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  nickname: varchar("nickname", { length: 255 }).notNull(),
+  channel_name: varchar("channel_name", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  old_content: text("old_content"),
+});
+
+export const discord_user = mysqlTable("discord_user", {
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull().primaryKey(),
+  disc_nickname: varchar("disc_nickname", { length: 255 }).notNull(),
+  ingame_name: varchar("ingame_name", { length: 255 }).notNull(),
+  highest_rank_role: int("highest_rank_role").notNull(),
+});
+
+export const eso = mysqlTable(
+  "eso",
   {
-    sessionToken: varchar("session_token", { length: 255 })
+    userId: varchar("userId", { length: 191 })
       .notNull()
+      .references(() => User.id, { onDelete: "cascade", onUpdate: "cascade" })
       .primaryKey(),
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
+    rank: varchar("rank", { length: 191 }).default("none").notNull(),
+    raid: tinyint("raid").default(0),
+    raidlead: tinyint("raidlead").default(0),
+    mentor: tinyint("mentor").default(0),
   },
-  (session) => ({
-    userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
+  (table) => {
+    return {
+      eso_userId_key: unique("eso_userId_key").on(table.userId),
+    };
+  },
 );
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}));
+export const eso_event = mysqlTable("eso_event", {
+  event_uid: int("event_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  event_type: varchar("event_type", { length: 255 }).notNull(),
+  attendee_cnt: int("attendee_cnt").notNull(),
+  duration: int("duration").notNull(),
+  revenue: int("revenue").notNull(),
+  start_timestamp: datetime("start_timestamp", { mode: "string" }).notNull(),
+  notes: text("notes").notNull(),
+});
 
-export const verificationTokens = createTable(
-  "verification_token",
+export const eso_event_unqiue = mysqlTable("eso_event_unqiue", {
+  event_uid: int("event_uid").notNull(),
+  attendee_num: int("attendee_num").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+});
+
+export const eso_raid = mysqlTable("eso_raid", {
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  trial: int("trial").notNull(),
+  difficulty: int("difficulty").notNull(),
+  clears: int("clears").notNull(),
+  wipes: int("wipes").notNull(),
+  duration: int("duration").notNull(),
+  raid_uid: int("raid_uid").autoincrement().notNull().primaryKey(),
+});
+
+export const eso_raid_unique = mysqlTable("eso_raid_unique", {
+  raid_uid: int("raid_uid").notNull(),
+  attendee_num: int("attendee_num").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+});
+
+export const eso_user = mysqlTable("eso_user", {
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  eso_id: varchar("eso_id", { length: 255 }).notNull().primaryKey(),
+  tier_tank: int("tier_tank"),
+  tier_healer: int("tier_healer"),
+  tier_dps: int("tier_dps"),
+  parse: int("parse").default(1).notNull(),
+});
+
+export const events = mysqlTable("events", {
+  event_id: int("event_id").autoincrement().notNull().primaryKey(),
+  event_type: varchar("event_type", { length: 255 }).notNull(),
+  date_time: datetime("date_time", { mode: "string" }).notNull(),
+  duration: int("duration").notNull(),
+  game: varchar("game", { length: 255 }).notNull(),
+  details: text("details").notNull(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  repeat_event: tinyint("repeat_event"),
+  req_tank: int("req_tank"),
+  req_heal: int("req_heal"),
+  req_dps: int("req_dps"),
+  req_parse: int("req_parse"),
+});
+
+export const event_signups = mysqlTable("event_signups", {
+  event_id: int("event_id").notNull(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  role: int("role"),
+  parse: int("parse").notNull(),
+  signup_uid: int("signup_uid").autoincrement().notNull().primaryKey(),
+});
+
+export const ffxiv = mysqlTable(
+  "ffxiv",
   {
-    identifier: varchar("identifier", { length: 255 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull(),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
+    userId: varchar("userId", { length: 191 })
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade", onUpdate: "cascade" })
+      .primaryKey(),
+    rank: varchar("rank", { length: 191 }).default("none").notNull(),
+    raid: tinyint("raid").default(0),
+    raidlead: tinyint("raidlead").default(0),
+    mentor: tinyint("mentor").default(0),
+  },
+  (table) => {
+    return {
+      ffxiv_userId_key: unique("ffxiv_userId_key").on(table.userId),
+    };
+  },
+);
+
+export const guides = mysqlTable("guides", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  content_id: int("content_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content"),
+  timestamp: timestamp("timestamp", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  cover_image_path: varchar("cover_image_path", { length: 255 }),
+  game_type: varchar("game_type", { length: 255 }),
+  summary: text("summary"),
+});
+
+export const guide_audience_mapping = mysqlTable("guide_audience_mapping", {
+  id: int("id").autoincrement().notNull().primaryKey(),
+  guide_id: int("guide_id"),
+  audience_id: int("audience_id"),
+});
+
+export const guild_names = mysqlTable("guild_names", {
+  guild_id: int("guild_id").notNull().primaryKey(),
+  guild_name: varchar("guild_name", { length: 255 }).notNull(),
+});
+
+export const mcmmo_cooldowns = mysqlTable("mcmmo_cooldowns", {
+  user_id: int("user_id").notNull().primaryKey(),
+  taming: int("taming").default(0).notNull(),
+  mining: int("mining").default(0).notNull(),
+  woodcutting: int("woodcutting").default(0).notNull(),
+  repair: int("repair").default(0).notNull(),
+  unarmed: int("unarmed").default(0).notNull(),
+  herbalism: int("herbalism").default(0).notNull(),
+  excavation: int("excavation").default(0).notNull(),
+  archery: int("archery").default(0).notNull(),
+  swords: int("swords").default(0).notNull(),
+  axes: int("axes").default(0).notNull(),
+  acrobatics: int("acrobatics").default(0).notNull(),
+  blast_mining: int("blast_mining").default(0).notNull(),
+  chimaera_wing: int("chimaera_wing").default(0).notNull(),
+  crossbows: int("crossbows").default(0).notNull(),
+  tridents: int("tridents").default(0).notNull(),
+  maces: int("maces").default(0).notNull(),
+});
+
+export const mcmmo_experience = mysqlTable("mcmmo_experience", {
+  user_id: int("user_id").notNull().primaryKey(),
+  taming: int("taming").default(0).notNull(),
+  mining: int("mining").default(0).notNull(),
+  woodcutting: int("woodcutting").default(0).notNull(),
+  repair: int("repair").default(0).notNull(),
+  unarmed: int("unarmed").default(0).notNull(),
+  herbalism: int("herbalism").default(0).notNull(),
+  excavation: int("excavation").default(0).notNull(),
+  archery: int("archery").default(0).notNull(),
+  swords: int("swords").default(0).notNull(),
+  axes: int("axes").default(0).notNull(),
+  acrobatics: int("acrobatics").default(0).notNull(),
+  fishing: int("fishing").default(0).notNull(),
+  alchemy: int("alchemy").default(0).notNull(),
+  crossbows: int("crossbows").default(0).notNull(),
+  tridents: int("tridents").default(0).notNull(),
+  maces: int("maces").default(0).notNull(),
+});
+
+export const mcmmo_huds = mysqlTable("mcmmo_huds", {
+  user_id: int("user_id").notNull().primaryKey(),
+  mobhealthbar: varchar("mobhealthbar", { length: 50 }),
+  scoreboardtips: int("scoreboardtips").default(0).notNull(),
+});
+
+export const mcmmo_skills = mysqlTable("mcmmo_skills", {
+  user_id: int("user_id").notNull().primaryKey(),
+  taming: int("taming").default(0).notNull(),
+  mining: int("mining").default(0).notNull(),
+  woodcutting: int("woodcutting").default(0).notNull(),
+  repair: int("repair").default(0).notNull(),
+  unarmed: int("unarmed").default(0).notNull(),
+  herbalism: int("herbalism").default(0).notNull(),
+  excavation: int("excavation").default(0).notNull(),
+  archery: int("archery").default(0).notNull(),
+  swords: int("swords").default(0).notNull(),
+  axes: int("axes").default(0).notNull(),
+  acrobatics: int("acrobatics").default(0).notNull(),
+  fishing: int("fishing").default(0).notNull(),
+  alchemy: int("alchemy").default(0).notNull(),
+  crossbows: int("crossbows").default(0).notNull(),
+  tridents: int("tridents").default(0).notNull(),
+  maces: int("maces").default(0).notNull(),
+  total: int("total").default(0).notNull(),
+});
+
+export const mcmmo_users = mysqlTable(
+  "mcmmo_users",
+  {
+    id: int("id").autoincrement().notNull().primaryKey(),
+    user: varchar("user", { length: 40 }),
+    uuid: varchar("uuid", { length: 36 }),
+    lastlogin: bigint("lastlogin", { mode: "number" }).notNull(),
+  },
+  (table) => {
+    return {
+      user_idx: index("user_index").on(table.user),
+      uuid: unique("uuid").on(table.uuid),
+    };
+  },
+);
+
+export const minecraft_user = mysqlTable("minecraft_user", {
+  mc_uid: int("mc_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 255 }),
+  mc_name: varchar("mc_name", { length: 255 }).notNull(),
+  disc_name: varchar("disc_name", { length: 255 }),
+  IP: varchar("IP", { length: 255 }).notNull(),
+  secret_key: varchar("secret_key", { length: 255 }).notNull(),
+  total_play_seconds: bigint("total_play_seconds", {
+    mode: "number",
+  }).notNull(),
+  seconds_this_week: bigint("seconds_this_week", { mode: "number" }),
+  last_seen: varchar("last_seen", { length: 255 }),
+});
+
+export const parse_records = mysqlTable("parse_records", {
+  parse_uid: int("parse_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 255 }).notNull(),
+  disc_nickname: varchar("disc_nickname", { length: 255 }),
+  char_name: varchar("char_name", { length: 255 }).notNull(),
+  class: int("class").notNull(),
+  damage: int("damage").notNull(),
+  timestamp: datetime("timestamp", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  patch_number: int("patch_number").default(42).notNull(),
+});
+
+export const post = mysqlTable("post", {
+  id: varchar("id", { length: 191 }).notNull().primaryKey(),
+  title: varchar("title", { length: 191 }).notNull(),
+  summary: text("summary").notNull(),
+  content: longtext("content").notNull(),
+  image: varchar("image", { length: 255 }),
+  timestamp: datetime("timestamp", { mode: "string", fsp: 3 })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: datetime("updatedAt", { mode: "string", fsp: 3 }).notNull(),
+  createdById: varchar("createdById", { length: 191 })
+    .notNull()
+    .references(() => User.id, { onDelete: "restrict", onUpdate: "cascade" }),
+});
+
+export const post_modification = mysqlTable(
+  "post_modification",
+  {
+    id: varchar("id", { length: 191 }).notNull().primaryKey(),
+    image: text("image"),
+    postId: varchar("postId", { length: 191 })
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    published: varchar("published", { length: 191 })
+      .default("Published by modById")
+      .notNull(),
+    modById: varchar("modById", { length: 191 })
+      .notNull()
+      .references(() => User.id, { onDelete: "restrict", onUpdate: "cascade" }),
+    ori_content: text("ori_content").notNull(),
+    ori_summary: text("ori_summary").notNull(),
+    ori_title: varchar("ori_title", { length: 191 }).notNull(),
+  },
+  (table) => {
+    return {
+      post_modification_postId_key: unique("post_modification_postId_key").on(
+        table.postId,
+      ),
+    };
+  },
+);
+
+export const post_permission = mysqlTable(
+  "post_permission",
+  {
+    id: varchar("id", { length: 191 }).notNull().primaryKey(),
+    postId: varchar("postId", { length: 191 })
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    guild_public: tinyint("guild_public").default(0).notNull(),
+    eso: tinyint("eso").default(0).notNull(),
+    ffxiv: tinyint("ffxiv").default(0).notNull(),
+    swtor: tinyint("swtor").default(0).notNull(),
+    staff: tinyint("staff").default(0).notNull(),
+    officer: tinyint("officer").default(0).notNull(),
+    raid: tinyint("raid").default(0).notNull(),
+    beginner: tinyint("beginner").default(0).notNull(),
+    intermediate: tinyint("intermediate").default(0).notNull(),
+    advanced: tinyint("advanced").default(0).notNull(),
+    published: tinyint("published").default(0).notNull(),
+    type: varchar("type", { length: 191 }).notNull(),
+    tgc_guild: tinyint("tgc_guild").default(0).notNull(),
+    tgc_member: tinyint("tgc_member").default(0).notNull(),
+  },
+  (table) => {
+    return {
+      post_permission_postId_key: unique("post_permission_postId_key").on(
+        table.postId,
+      ),
+    };
+  },
+);
+
+export const rank_role_mapping = mysqlTable("rank_role_mapping", {
+  rank_role_id: int("rank_role_id").notNull().primaryKey(),
+  rank_role: varchar("rank_role", { length: 60 }),
+});
+
+export const rewards = mysqlTable("rewards", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  playTime: bigint("playTime", { mode: "number" }),
+  uses: bigint("uses", { mode: "number" }).default(-1),
+  votes: bigint("votes", { mode: "number" }),
+  referredTo: tinytext("referredTo"),
+  join_notification: tinyint("join_notification").default(1),
+  live_notifications: tinyint("live_notifications").default(1),
+  join_auto_claim: tinyint("join_auto_claim").default(0),
+  exampleVoteRewardCollected: bigint("exampleVoteRewardCollected", {
+    mode: "number",
+  }),
+  exampleVoteReward: bigint("exampleVoteReward", { mode: "number" }).default(
+    -1,
+  ),
+  exampleStreakRewardCollected: bigint("exampleStreakRewardCollected", {
+    mode: "number",
+  }),
+  exampleStreakReward: bigint("exampleStreakReward", { mode: "number" }),
+  exampleStreakRewardCurrentStreak: bigint("exampleStreakRewardCurrentStreak", {
+    mode: "number",
+  }),
+  examplePurchasableRewardCollected: bigint(
+    "examplePurchasableRewardCollected",
+    { mode: "number" },
+  ),
+  examplePurchasableReward: bigint("examplePurchasableReward", {
+    mode: "number",
+  }).default(-1),
+  exampleAdventCalendarCollected: bigint("exampleAdventCalendarCollected", {
+    mode: "number",
+  }),
+  exampleAdventCalendar: varchar("exampleAdventCalendar", {
+    length: 255,
+  }).default("000000000000000000000000"),
+  exampleTimeLimitedRewardCollected: bigint(
+    "exampleTimeLimitedRewardCollected",
+    { mode: "number" },
+  ),
+  exampleTimeLimitedReward: bigint("exampleTimeLimitedReward", {
+    mode: "number",
+  }),
+  exampleRenewablePlayTimeRewardCollected: bigint(
+    "exampleRenewablePlayTimeRewardCollected",
+    { mode: "number" },
+  ),
+  exampleRenewablePlayTimeReward: bigint("exampleRenewablePlayTimeReward", {
+    mode: "number",
+  }).default(-1),
+  exampleOneTimeRewardCollected: bigint("exampleOneTimeRewardCollected", {
+    mode: "number",
+  }),
+  exampleOneTimeReward: bigint("exampleOneTimeReward", { mode: "number" }),
+  exampleStreakFixedRewardCollected: bigint(
+    "exampleStreakFixedRewardCollected",
+    { mode: "number" },
+  ),
+  exampleStreakFixedRewardCurrentStreak: tinytext(
+    "exampleStreakFixedRewardCurrentStreak",
+  ),
+  exampleStreakFixedReward: tinytext("exampleStreakFixedReward"),
+  exampleTimeRewardCollected: bigint("exampleTimeRewardCollected", {
+    mode: "number",
+  }),
+  exampleTimeReward: bigint("exampleTimeReward", { mode: "number" }).default(
+    1717181630076,
+  ),
+  exampleTimeFixedRewardCollected: bigint("exampleTimeFixedRewardCollected", {
+    mode: "number",
+  }),
+  exampleTimeFixedReward: tinytext("exampleTimeFixedReward"),
+  exampleRenewableVoteRewardCollected: bigint(
+    "exampleRenewableVoteRewardCollected",
+    { mode: "number" },
+  ),
+  exampleRenewableVoteReward: bigint("exampleRenewableVoteReward", {
+    mode: "number",
+  }),
+  exampleStreakVoteRewardCollected: bigint("exampleStreakVoteRewardCollected", {
+    mode: "number",
+  }),
+  exampleStreakVoteRewardVotes: bigint("exampleStreakVoteRewardVotes", {
+    mode: "number",
+  }),
+  exampleStreakVoteReward: bigint("exampleStreakVoteReward", {
+    mode: "number",
+  }).default(1717181632255),
+  exampleStreakVoteRewardCurrentStreak: bigint(
+    "exampleStreakVoteRewardCurrentStreak",
+    { mode: "number" },
+  ),
+  exampleRePurchasableRewardCollected: bigint(
+    "exampleRePurchasableRewardCollected",
+    { mode: "number" },
+  ),
+  exampleRePurchasableReward: bigint("exampleRePurchasableReward", {
+    mode: "number",
+  }).default(1717181633048),
+  exampleReferralRewardCollected: bigint("exampleReferralRewardCollected", {
+    mode: "number",
+  }),
+  exampleReferralReward: bigint("exampleReferralReward", {
+    mode: "number",
+  }).default(-1),
+  examplePlayTimeRewardCollected: bigint("examplePlayTimeRewardCollected", {
+    mode: "number",
+  }),
+  examplePlayTimeReward: bigint("examplePlayTimeReward", {
+    mode: "number",
+  }).default(-1),
+  exampleRenewableReferralRewardCollected: bigint(
+    "exampleRenewableReferralRewardCollected",
+    { mode: "number" },
+  ),
+  exampleRenewableReferralReward: bigint("exampleRenewableReferralReward", {
+    mode: "number",
+  }),
+});
+
+export const Session = mysqlTable(
+  "Session",
+  {
+    id: varchar("id", { length: 191 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sessionToken: varchar("sessionToken", { length: 191 }).notNull(),
+    userId: varchar("userId", { length: 191 })
+      .notNull()
+      .references(() => User.id),
+    expires: timestamp("expires", { mode: "date", fsp: 3 }).notNull(),
+  },
+  (table) => {
+    return {
+      user_idx: index("user_idx").on(table.userId),
+      Session_sessionToken_key: unique("Session_sessionToken_key").on(
+        table.sessionToken,
+      ),
+    };
+  },
+);
+
+export const situation_disciplinary = mysqlTable("situation_disciplinary", {
+  action_uid: int("action_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  punish_type: int("punish_type").notNull(),
+  probation_weeks: int("probation_weeks"),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  report: text("report"),
+});
+
+export const situation_report = mysqlTable("situation_report", {
+  report_uid: int("report_uid").autoincrement().notNull().primaryKey(),
+  action_uid: int("action_uid"),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  content: text("content").notNull(),
+});
+
+export const staff = mysqlTable(
+  "staff",
+  {
+    userId: varchar("userId", { length: 191 })
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade", onUpdate: "cascade" })
+      .primaryKey(),
+    admin: tinyint("admin").default(0),
+    specialist: tinyint("specialist").default(0),
+    representative: tinyint("representative").default(0),
+    highcouncil: tinyint("highcouncil").default(0),
+    guildmaster: tinyint("guildmaster").default(0),
+    juniorofficer: tinyint("juniorofficer").default(0),
+    officer: tinyint("officer").default(0),
+    seniorofficer: tinyint("seniorofficer").default(0),
+  },
+  (table) => {
+    return {
+      staff_userId_key: unique("staff_userId_key").on(table.userId),
+    };
+  },
+);
+
+export const staff_admin = mysqlTable("staff_admin", {
+  task_uid: int("task_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  duty_type: int("duty_type").notNull(),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  action_target: int("action_target"),
+});
+
+export const staff_duty = mysqlTable("staff_duty", {
+  duty_uid: int("duty_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 45 })
+    .notNull()
+    .references(() => discord_user.gmember_id, {
+      onDelete: "restrict",
+      onUpdate: "restrict",
+    }),
+  duty_type: int("duty_type")
+    .notNull()
+    .references(() => staff_point_chart.task_id, {
+      onDelete: "restrict",
+      onUpdate: "restrict",
+    }),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  target: int("target"),
+  eso_target_user: varchar("eso_target_user", { length: 255 }),
+  message_content: text("message_content"),
+  description: text("description"),
+});
+
+export const staff_ff_swtor = mysqlTable("staff_ff_swtor", {
+  task_uid: int("task_uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+  duty_id: int("duty_id").notNull(),
+});
+
+export const staff_point_chart = mysqlTable("staff_point_chart", {
+  task_id: int("task_id").notNull().primaryKey(),
+  task_name: varchar("task_name", { length: 255 }).notNull(),
+  point_value: int("point_value").notNull(),
+  task_description: text("task_description"),
+});
+
+export const staff_point_log = mysqlTable("staff_point_log", {
+  uid: int("uid").autoincrement().notNull().primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 191 }).notNull(),
+  cnt_points: int("cnt_points").notNull(),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+});
+
+export const staff_status_change = mysqlTable("staff_status_change", {
+  transaction_id: int("transaction_id").autoincrement().notNull().primaryKey(),
+  status_update: int("status_update").notNull(),
+  training_type: int("training_type"),
+  trainer_gmember_id: int("trainer_gmember_id"),
+  timestamp: datetime("timestamp", { mode: "string" }).notNull(),
+});
+
+export const swtor = mysqlTable(
+  "swtor",
+  {
+    userId: varchar("userId", { length: 191 })
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade", onUpdate: "cascade" })
+      .primaryKey(),
+    rank: varchar("rank", { length: 191 }).default("none").notNull(),
+    raid: tinyint("raid").default(0),
+    raidlead: tinyint("raidlead").default(0),
+    mentor: tinyint("mentor").default(0),
+  },
+  (table) => {
+    return {
+      swtor_userId_key: unique("swtor_userId_key").on(table.userId),
+    };
+  },
+);
+
+export const User = mysqlTable(
+  "User",
+  {
+    id: varchar("id", { length: 191 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: varchar("name", { length: 191 }).notNull(),
+    email: varchar("email", { length: 191 }).notNull(),
+    emailVerified: timestamp("emailVerified", { mode: "date", fsp: 3 }),
+    image: varchar("image", { length: 191 }).notNull(),
+    role: varchar("role", { length: 191 }).default("guest").notNull(),
+    tgc_guild_member: tinyint("tgc_guild_member").default(0).notNull(),
+  },
+  (table) => {
+    return {
+      User_name_key: unique("User_name_key").on(table.name),
+      User_email_key: unique("User_email_key").on(table.email),
+    };
+  },
+);
+
+export const velothi_waivers = mysqlTable("velothi_waivers", {
+  gmember_id: varchar("gmember_id", { length: 255 }).notNull(),
+  nickname: varchar("nickname", { length: 255 }),
+  waiver: tinyint("waiver"),
+  las: decimal("las", { precision: 10, scale: 0 }),
+  special_class: int("special_class"),
+  uid: int("uid").autoincrement().notNull().primaryKey(),
+  record_date: datetime("record_date", { mode: "string" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const VerificationToken = mysqlTable(
+  "VerificationToken",
+  {
+    identifier: varchar("identifier", { length: 191 }).notNull(),
+    token: varchar("token", { length: 191 }).notNull(),
+    expires: timestamp("expires", { mode: "date", fsp: 3 }).notNull(),
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );
+
+export const voice_sessions = mysqlTable("voice_sessions", {
+  voice_session_id: varchar("voice_session_id", { length: 100 })
+    .notNull()
+    .primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 45 }),
+  channel_id: varchar("channel_id", { length: 45 }),
+  start_time: datetime("start_time", { mode: "string" }),
+  end_time: datetime("end_time", { mode: "string" }),
+  duration: float("duration"),
+});
+
+export const voice_time = mysqlTable("voice_time", {
+  conn_uid: bigint("conn_uid", { mode: "number" })
+    .autoincrement()
+    .notNull()
+    .primaryKey(),
+  gmember_id: varchar("gmember_id", { length: 255 }).notNull(),
+  nick: varchar("nick", { length: 255 }).notNull(),
+  connection_time: datetime("connection_time", { fsp: 6 }).notNull(),
+  new_channel: varchar("new_channel", { length: 255 }),
+  old_channel: varchar("old_channel", { length: 255 }),
+  n_users: text("n_users"),
+  o_users: text("o_users"),
+});

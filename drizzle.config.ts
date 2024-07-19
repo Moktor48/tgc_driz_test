@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["tgc_driz_test_*"],
+  //tablesFilter: ["tgc_driz_test_*"],
 } satisfies Config;
